@@ -159,12 +159,16 @@ class Project(object):
     def fetch(self, url, **kwargs):
         return self.client.fetch('/projects/{}{}'.format(self.id, url), **kwargs)
 
-    def create_instance(self, flavor, os, name=''):
-        instance_id_dict = self.client.fetch(
-            '/instances',
-            method='post',
-            data={'project': self.id, 'flavor': flavor, 'os': os, 'name': name},
-        )
+    def create_instance(self, flavor, os, os_build=None, name=''):
+        data = {
+                'flavor': flavor,
+                'name': name,
+                'os': os,
+                'project': self.id,
+                }
+        if os_build:
+            data['osbuild'] = os_build
+        instance_id_dict = self.client.fetch('/instances', method='post', data=data)
         return self.get_instance(instance_id_dict['id'])
 
     def get_instance(self, instance_id):
