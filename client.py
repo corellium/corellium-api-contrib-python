@@ -33,8 +33,6 @@ class Client(object):
         return new_client
 
     def fetch(self, url, data=None, method=None, raw=False):
-        global logger
-
         if self.token:
             if self.token['expiration'] <= int(time.time()):
                 self.token = None
@@ -181,7 +179,7 @@ class Project(object):
             Instance(self.client, instance_dict) for instance_dict in instance_dicts
         ]
 
-    def get_vpn_config(self, proj):
+    def get_vpn_config(self):
         return self.fetch(
             '/vpn-configs/{}.ovpn'.format(str(self.client.uuid)), raw=True
         )
@@ -229,6 +227,6 @@ class Instance(object):
 
     def wait_for_creation_done(self):
         self.update()
-        while not is_creation_done():
+        while not self.is_creation_done():
             time.sleep(5)
             self.update()
