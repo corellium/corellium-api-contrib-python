@@ -5,6 +5,7 @@ import getpass
 import logging
 import requests
 import time
+import urllib.parse
 import urllib3.exceptions
 import uuid
 import warnings
@@ -14,10 +15,9 @@ logger = logging.getLogger('Corellium')
 # this is a partial python api inspired by the js one found at:
 # https://github.com/corellium/corellium-api
 
-
 class Client(object):
     def __init__(self, endpoint):
-        self.endpoint = endpoint + '/api/v1'
+        self.endpoint = urllib.parse.urljoin(endpoint, '/api/v1')
         self.username = None
         self.password = None
         self.token = None
