@@ -208,6 +208,9 @@ class Instance(object):
     def delete_instance(self):
         return self.fetch('', method='delete')
 
+    def get_console_log(self):
+        return self.fetch('/consoleLog', raw=True).decode('utf8')
+
     def get_instance(self):
         return self.fetch('')
 
@@ -220,8 +223,27 @@ class Instance(object):
     def get_console_log(self):
         return self.fetch('/consoleLog', raw=True).decode('utf8')
 
+    # TODO: Add a BootOptions POD class. POD class members are self-documenting.
+    def set_boot_options(self, boot_options):
+        return self.fetch('', method='patch', data={'bootOptions': boot_options})
+
+    def set_name(self, name):
+        return self.fetch('', method='patch', data={'name': name})
+
+    def pause(self):
+        return self.fetch('/pause', method='post')
+
     def reboot(self):
         return self.fetch('/reboot', method='post')
+
+    def start(self):
+        return self.fetch('/start', method='post')
+
+    def stop(self):
+        return self.fetch('/stop', method='post')
+
+    def unpause(self):
+        return self.fetch('/unpause', method='post')
 
     def update(self):
         self.info = self.fetch('')
