@@ -1,12 +1,12 @@
-import os
-import time
-import uuid
+#!/usr/bin/env python3
+
+import datetime
 import getpass
 import logging
-import datetime
 import requests
-
-from urllib3.exceptions import InsecureRequestWarning
+import time
+import urllib3.exceptions
+import uuid
 import warnings
 
 logger = logging.getLogger('Corellium')
@@ -52,7 +52,7 @@ class Client(object):
         )
         while True:
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore', InsecureRequestWarning)
+                warnings.simplefilter('ignore', urllib3.exceptions.InsecureRequestWarning)
                 try:
                     res = method(
                         '{}{}'.format(self.endpoint, url), json=data, verify=False
