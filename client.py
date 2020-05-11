@@ -9,7 +9,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 import warnings
 
-logger = logging.getLogger("Corellium")
+logger = logging.getLogger('Corellium')
 
 # this is a partial python api inspired by the js one found at:
 # https://github.com/corellium/corellium-api
@@ -17,7 +17,7 @@ logger = logging.getLogger("Corellium")
 
 class Client(object):
     def __init__(self, endpoint):
-        self.endpoint = endpoint + "/api/v1"
+        self.endpoint = endpoint + '/api/v1'
         self.username = None
         self.password = None
         self.token = None
@@ -29,14 +29,14 @@ class Client(object):
         new_client = cls(original.endpoint)
         new_client.__dict__.update(original.__dict__)
         new_client.session = requests.Session()
-        new_client.session.headers["Authorization"] = new_client.token["token"]
+        new_client.session.headers['Authorization'] = new_client.token['token']
         return new_client
 
     def fetch(self, url, data=None, method=None, raw=False):
         global logger
 
         if self.token:
-            if self.token["expiration"] <= int(time.time()):
+            if self.token['expiration'] <= int(time.time()):
                 self.token = None
                 self.login()
 
@@ -46,30 +46,30 @@ class Client(object):
             method = self.session.post if data else self.session.get
 
         logger.debug(
-            "method: {} url: {}{} data: {} headers: {}".format(
+            'method: {} url: {}{} data: {} headers: {}'.format(
                 method.__name__.upper(), self.endpoint, url, data, self.session.headers
             )
         )
         while True:
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", InsecureRequestWarning)
+                warnings.simplefilter('ignore', InsecureRequestWarning)
                 try:
                     res = method(
-                        "{}{}".format(self.endpoint, url), json=data, verify=False
+                        '{}{}'.format(self.endpoint, url), json=data, verify=False
                     )
                 except TimeoutError:
                     time.sleep(10)
                     continue
 
             if res.status_code == 429:
-                retryAfter = res.headers.get("retry-after")
-                print("server told us to try again after {} seconds".format(retryAfter))
+                retryAfter = res.headers.get('retry-after')
+                print('server told us to try again after {} seconds'.format(retryAfter))
                 time.sleep(int(retryAfter))
                 continue
 
             logger.debug(
-                "response: code: {} content: {}".format(
-                    res.status_code, res.content.decode("utf-8")
+                'response: code: {} content: {}'.format(
+                    res.status_code, res.content.decode('utf-8')
                 )
             )
             if raw:
@@ -81,74 +81,74 @@ class Client(object):
 
     def login(self):
         if not self.username or not self.password:
-            self.username = input("Corellium Username [admin]:").strip()
+            self.username = input('Corellium Username [admin]:').strip()
             if not self.username:
-                self.username = "admin"
-            self.password = getpass.getpass("Corellium Password: ")
+                self.username = 'admin'
+            self.password = getpass.getpass('Corellium Password: ')
 
         if not self.token:
             js = self.fetch(
-                "/tokens", data={"username": self.username, "password": self.password}
+                '/tokens', data={'username': self.username, 'password': self.password}
             )
-            if "token" not in js or "expiration" not in js:
-                raise ValueError("Login failed!")
+            if 'token' not in js or 'expiration' not in js:
+                raise ValueError('Login failed!')
 
             # TODO there must be a better way to do this, but I don't know what it is
             expiration = int(
                 datetime.datetime.strptime(
-                    js["expiration"], "%Y-%m-%dT%H:%M:%S.000Z"
+                    js['expiration'], '%Y-%m-%dT%H:%M:%S.000Z'
                 ).timestamp()
             )
             # expiration is in UTC, we aren't
             expiration -= (datetime.datetime.utcnow() - datetime.datetime.now()).seconds
-            self.token = {"token": js["token"], "expiration": expiration}
-            self.session.headers["Authorization"] = js["token"]
+            self.token = {'token': js['token'], 'expiration': expiration}
+            self.session.headers['Authorization'] = js['token']
 
         return self.token
 
     def get_projects(self):
-        project_dicts = self.fetch("/projects")
-        if "error" in project_dicts:
-            print("error:", project_dicts["error"])
+        project_dicts = self.fetch('/projects')
+        if 'error' in project_dicts:
+            print('error:', project_dicts['error'])
             return []
         return [Project(self, **p_dict) for p_dict in project_dicts]
 
     def create_project(self, name, color=1, version=1, internet=True):
         res = self.fetch(
-            "/projects",
-            method="post",
+            '/projects',
+            method='post',
             data={
-                "name": name,
-                "color": color,
-                "settings": {"version": version, "internet-access": internet},
+                'name': name,
+                'color': color,
+                'settings': {'version': version, 'internet-access': internet},
             },
         )
-        return self.get_project(res["id"])
+        return self.get_project(res['id'])
 
     def get_project(self, project_id):
-        project_dict = self.fetch("/projects/{}".format(project_id))
+        project_dict = self.fetch('/projects/{}'.format(project_id))
         return Project(self, **project_dict)
 
     def get_instance(self, instance_id):
-        instance_dict = self.fetch("/instances/{}".format(instance_id))
+        instance_dict = self.fetch('/instances/{}'.format(instance_id))
         return Instance(self, instance_dict)
 
     def get_supported(self):
-        return self.fetch("/supported")
+        return self.fetch('/supported')
 
     def get_supported_flavors(self, os_type=None):
         if os_type:
             return [
-                entry["flavor"]
+                entry['flavor']
                 for entry in self.get_supported()
-                if entry["type"] == os_type
+                if entry['type'] == os_type
             ]
-        return [entry["flavor"] for entry in self.get_supported()]
+        return [entry['flavor'] for entry in self.get_supported()]
 
     def get_supported_oses(self, flavor):
         for entry in self.get_supported():
-            if entry["flavor"] == flavor:
-                return [fw["version"] for fw in entry["firmwares"]]
+            if entry['flavor'] == flavor:
+                return [fw['version'] for fw in entry['firmwares']]
         return []
 
 
@@ -159,23 +159,23 @@ class Project(object):
             setattr(self, attr, val)
 
     def fetch(self, url, **kwargs):
-        return self.client.fetch("/projects/{}{}".format(self.id, url), **kwargs)
+        return self.client.fetch('/projects/{}{}'.format(self.id, url), **kwargs)
 
-    def create_instance(self, flavor, os, name=""):
+    def create_instance(self, flavor, os, name=''):
         instance_id_dict = self.client.fetch(
-            "/instances",
-            method="post",
-            data={"project": self.id, "flavor": flavor, "os": os, "name": name},
+            '/instances',
+            method='post',
+            data={'project': self.id, 'flavor': flavor, 'os': os, 'name': name},
         )
-        return self.get_instance(instance_id_dict["id"])
+        return self.get_instance(instance_id_dict['id'])
 
     def get_instance(self, instance_id):
-        instance_dict = self.client.fetch("/instances/{}".format(instance_id))
+        instance_dict = self.client.fetch('/instances/{}'.format(instance_id))
         return Instance(self.client, instance_dict)
 
     def get_instances(self):
         instance_dicts = sorted(
-            self.fetch("/instances"), key=lambda instance_dict: instance_dict["created"]
+            self.fetch('/instances'), key=lambda instance_dict: instance_dict['created']
         )
         return [
             Instance(self.client, instance_dict) for instance_dict in instance_dicts
@@ -183,14 +183,14 @@ class Project(object):
 
     def get_vpn_config(self, proj):
         return self.fetch(
-            "/vpn-configs/{}.ovpn".format(str(self.client.uuid)), raw=True
+            '/vpn-configs/{}.ovpn'.format(str(self.client.uuid)), raw=True
         )
 
     def delete_project(self):
-        self.fetch("", method="delete")
+        self.fetch('', method='delete')
 
     def set_quota(self, cores):
-        return self.fetch("", method="patch", data={"quotas": {"cores": cores}})
+        return self.fetch('', method='patch', data={'quotas': {'cores': cores}})
 
 
 class Instance(object):
@@ -201,31 +201,31 @@ class Instance(object):
             setattr(self, attr, val)
 
     def fetch(self, url, **kwargs):
-        return self.client.fetch("/instances/{}{}".format(self.id, url), **kwargs)
+        return self.client.fetch('/instances/{}{}'.format(self.id, url), **kwargs)
 
     def delete_instance(self):
-        return self.fetch("", method="delete")
+        return self.fetch('', method='delete')
 
     def get_instance(self):
-        return self.fetch("")
+        return self.fetch('')
 
     def get_panics(self):
-        return self.fetch("/panics")
+        return self.fetch('/panics')
 
     def clear_panics(self):
-        return self.fetch("/panics", method="delete")
+        return self.fetch('/panics', method='delete')
 
     def get_console_log(self):
-        return self.fetch("/consoleLog", raw=True).decode("utf8")
+        return self.fetch('/consoleLog', raw=True).decode('utf8')
 
     def reboot(self):
-        return self.fetch("/reboot", method="post")
+        return self.fetch('/reboot', method='post')
 
     def update(self):
-        self.info = self.fetch("")
+        self.info = self.fetch('')
 
     def is_creation_done(self):
-        return self.info["state"] != "creating"
+        return self.info['state'] != 'creating'
 
     def wait_for_creation_done(self):
         self.update()
